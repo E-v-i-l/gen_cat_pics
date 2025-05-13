@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обработка изображений</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: url('/static/background.jpg') no-repeat center center;
+            background-color: #000;
+            background-size: contain;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .container {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .image-container {
+            margin: 20px;
+            max-width: 90%;
+            max-height: 70vh;
+            display: none; /* Сначала скрыт */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            border: 3px solid white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 100;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 8px solid white;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .upload-btn {
+            margin-bottom: 50px;
+            padding: 15px 30px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-btn:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .upload-btn input {
+            display: none;
+        }
+
+        .error {
+            color: #ff6b6b;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error" id="error"></div>
+        <div class="image-container" id="imageContainer">
+            <img id="processedImage" alt="Обработанное изображение">
+        </div>
+    </div>
+
+    <label class="upload-btn">
+        Загрузить изображение
+        <input type="file" id="fileInput" name="file" accept="image/*">
+    </label>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <h2>Скоро будет магия...</h2>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                // Показываем экран загрузки
+                document.getElementById('loading').classList.add('active');
+                document.getElementById('error').style.display = 'none';
+                
+                // Создаем FormData для отправки файла
+                const formData = new FormData();
+                formData.append('file', this.files[0]);
+                
+                // Отправляем файл на сервер
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Скрываем экран загрузки
+                    document.getElementById('loading').classList.remove('active');
+                    
+                    if (data.error) {
+                        // Показываем ошибку
+                        document.getElementById('error').textContent = data.error;
+                        document.getElementById('error').style.display = 'block';
+                    } else if (data.processed_image) {
+                        // Показываем обработанное изображение
+                        const imgContainer = document.getElementById('imageContainer');
+                        const imgElement = document.getElementById('processedImage');
+                        
+                        imgElement.src = data.processed_image;
+                        imgContainer.style.display = 'flex';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loading').classList.remove('active');
+                    document.getElementById('error').textContent = 'Ошибка при обработке изображения';
+                    document.getElementById('error').style.display = 'block';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
