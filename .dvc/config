@@ -1,0 +1,4 @@
+[core]
+    remote = ssh
+['remote "ssh"']
+    url = ssh://dvc@l27001.net/dvc/gen_cat_pics
